@@ -17,6 +17,7 @@ import javax.servlet.http.HttpSession;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 @Controller
@@ -47,14 +48,27 @@ public class ShareController {
         Integer affect_rows=shareDao.deleteShareById(account,shareid);
         return new ResponseInfo(affect_rows>0?"success":"fail",affect_rows>0,affect_rows);
     }
+
+    @PostMapping("/share/like")
+    @ResponseBody
+    public ResponseInfo likeShare(@RequestParam("account") String account, @RequestParam("shareid") Long shareid) {
+        Integer liked = shareDao.likeShare(account, shareid);
+        return new ResponseInfo(liked > 0 ? "success" : "fail", liked > 0, liked);
+    }
+
     @GetMapping("/share/getbyaccount")
     @ResponseBody
-    /**\
-     * 这个接口需要更改，动态应该包含点赞数量和评论情况
-     */
     public ResponseInfo getShareByAccount(@RequestParam("account") String account){
-        ArrayList<Share> shares=(ArrayList<Share>) shareDao.getShareByAccount(account);
-        return new ResponseInfo("success",true,shares);
+        List<Map<String, Object>> shareDataList = shareDao.getShareByAccountWithLikes(account);
+        
+        // Extract the Share objects from the Map
+        ArrayList<Share> shares = new ArrayList<>();
+        for (Map<String, Object> shareData : shareDataList) {
+            Share share = (Share) shareData.get("share");
+            shares.add(share);
+        }
+        
+        return new ResponseInfo("success", true, shares);
     }
 
     @GetMapping("/share/publish")

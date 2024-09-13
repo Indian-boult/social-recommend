@@ -1,27 +1,41 @@
-# Use the official OpenJDK image as a parent image
-FROM openjdk:8-jdk-alpine
+# Use the latest Ubuntu image
+FROM ubuntu:latest
 
-# Install Maven
-RUN apk add --no-cache curl tar bash
-ARG MAVEN_VERSION=3.8.8
-ARG USER_HOME_DIR="/root"
-RUN mkdir -p /usr/share/maven && \
-curl -fsSL https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz | tar -xzC /usr/share/maven --strip-components=1 && \
-ln -s /usr/share/maven/bin/mvn /usr/bin/mvn
-ENV MAVEN_HOME /usr/share/maven
-ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
+# Set environment variables for non-interactive installs
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Set the working directory in the container
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    unzip \
+    zip \
+    curl \
+    tar \
+    wget \
+    openjdk-11-jdk \
+    maven
+
+# Set JAVA_HOME environment variable for JDK
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
+ENV PATH="$JAVA_HOME/bin:${PATH}"
+
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copy the pom.xml file
-COPY pom.xml .
+# Copy the project files to the container
+COPY . .
 
-# Copy the project source
-COPY src ./src
+# Install project dependencies and compile the project
+RUN mvn clean compile
 
-# Package the application
+# Run the tests
+RUN mvn test
+
+# Build the package (creates the JAR file)
 RUN mvn package -DskipTests
 
-# Run the jar file 
-ENTRYPOINT ["java","-jar","/app/target/social_recommend-0.0.1-SNAPSHOT.jar"]
+# Expose the port that the Spring Boot app runs on (default 8080)
+EXPOSE 8080
+
+# Set the entry point to run the JAR file generated in the target directory
+CMD ["java", "-jar", "/app/target/social_recommend-0.0.1-SNAPSHOT.jar"]

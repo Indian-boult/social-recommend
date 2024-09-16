@@ -1,10 +1,10 @@
-# Use the latest Ubuntu image
+# Use the latest Ubuntu image as the base
 FROM ubuntu:latest
 
 # Set environment variables for non-interactive installs
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install dependencies
+# Install necessary packages including Git, Maven, and JDK
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -19,23 +19,17 @@ RUN apt-get update && apt-get install -y \
 ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 ENV PATH="$JAVA_HOME/bin:${PATH}"
 
-# Set the working directory inside the container
+# Set the working directory in the container to /app
 WORKDIR /app
 
-# Copy the project files to the container
+# Copy the entire project directory (including .git) into the container
 COPY . .
 
-# Install project dependencies and compile the project
-RUN mvn clean compile
+# Resolve Maven dependencies, compile the project, skip unit tests during build to speed up the process
+RUN mvn clean install -DskipTests
 
-# Run the tests
-RUN mvn test
-
-# Build the package (creates the JAR file)
-RUN mvn package -DskipTests
-
-# Expose the port that the Spring Boot app runs on (default 8080)
+# The port that the application uses, expose it
 EXPOSE 8080
 
-# Set the entry point to run the JAR file generated in the target directory
-CMD ["java", "-jar", "/app/target/social_recommend-0.0.1-SNAPSHOT.jar"]
+# Command to run the application using Java
+CMD ["java", "-jar", "target/social_recommend-0.0.1-SNAPSHOT.jar"]

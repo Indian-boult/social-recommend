@@ -33,3 +33,11 @@ EXPOSE 8080
 
 # Command to run the application using Java
 CMD ["java", "-jar", "target/social_recommend-0.0.1-SNAPSHOT.jar"]
+
+WORKDIR /app
+# Copy the run_tests.sh script to the root of the container
+COPY run_tests.sh /run_tests.sh
+
+# Make the script executable
+RUN chmod +x /run_tests.sh
+ENTRYPOINT ["/bin/bash", "-s"]
